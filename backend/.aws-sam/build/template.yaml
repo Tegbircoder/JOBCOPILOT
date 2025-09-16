@@ -1,0 +1,294 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: "JobCopilot \u2013 HTTP API + Lambdas + DynamoDB"
+Parameters:
+  CardsTableName:
+    Type: String
+    Default: jobcopilot-cards-dev
+  ProfilesTableName:
+    Type: String
+    Default: jobcopilot-profiles-dev
+  UserPoolId:
+    Type: String
+    Description: Cognito User Pool ID (for JWT authorizer)
+  UserPoolClientId:
+    Type: String
+    Description: Cognito App Client ID (audience for JWT authorizer)
+  AllowDevHeader:
+    Type: String
+    Default: '1'
+    AllowedValues:
+    - '0'
+    - '1'
+    Description: When 1, handlers accept "x-user-id" (DEV ONLY)
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    MemorySize: 256
+    Timeout: 20
+    Architectures:
+    - x86_64
+    Environment:
+      Variables:
+        CARDS_TABLE:
+          Ref: CardsTableName
+        PROFILES_TABLE:
+          Ref: ProfilesTableName
+        ALLOW_DEV_HEADER:
+          Ref: AllowDevHeader
+Resources:
+  Api:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins:
+        - http://localhost:5173
+        - http://localhost:5174
+        AllowHeaders:
+        - Authorization
+        - Content-Type
+        - x-user-id
+        AllowMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+      Auth:
+        DefaultAuthorizer: CognitoAuth
+        Authorizers:
+          CognitoAuth:
+            JwtConfiguration:
+              audience:
+              - Ref: UserPoolClientId
+              issuer:
+                Fn::Sub: https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPoolId}
+            IdentitySource: $request.header.Authorization
+  CardsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName:
+        Ref: CardsTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+      - AttributeName: userId
+        AttributeType: S
+      - AttributeName: cardId
+        AttributeType: S
+      KeySchema:
+      - AttributeName: userId
+        KeyType: HASH
+      - AttributeName: cardId
+        KeyType: RANGE
+  ProfilesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName:
+        Ref: ProfilesTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+      - AttributeName: userId
+        AttributeType: S
+      KeySchema:
+      - AttributeName: userId
+        KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
+  HealthFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: HealthFn
+      Handler: health.handler
+      Events:
+        Health:
+          Type: HttpApi
+          Properties:
+            Path: /health
+            Method: GET
+            ApiId:
+              Ref: Api
+            Auth:
+              Authorizer: NONE
+    Metadata:
+      SamResourceId: HealthFn
+  CardsFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: CardsFn
+      Handler: cards.handler
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: CardsTableName
+      Events:
+        CardsList:
+          Type: HttpApi
+          Properties:
+            Path: /cards
+            Method: GET
+            ApiId:
+              Ref: Api
+            Auth:
+              Authorizer: CognitoAuth
+        CardsDebug:
+          Type: HttpApi
+          Properties:
+            Path: /cards/_debug
+            Method: GET
+            ApiId:
+              Ref: Api
+            Auth:
+              Authorizer: CognitoAuth
+        CardsCreate:
+          Type: HttpApi
+          Properties:
+            Path: /cards
+            Method: POST
+            ApiId:
+              Ref: Api
+            Auth:
+              Authorizer: CognitoAuth
+        CardsUpdate:
+          Type: HttpApi
+          Properties:
+            Path: /cards/{cardid}
+            Method: PUT
+            ApiId:
+              Ref: Api
+            Auth:
+              Authorizer: CognitoAuth
+        CardsDelete:
+          Type: HttpApi
+          Properties:
+            Path: /cards/{cardid}
+            Method: DELETE
+            ApiId:
+              Ref: Api
+            Auth:
+              Authorizer: CognitoAuth
+    Metadata:
+      SamResourceId: CardsFn
+  StatsFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: StatsFn
+      Handler: stats.handler
+      Policies:
+      - DynamoDBReadPolicy:
+          TableName:
+            Ref: CardsTableName
+      Events:
+        Stats:
+          Type: HttpApi
+          Properties:
+            Path: /stats
+            Method: GET
+            ApiId:
+              Ref: Api
+            Auth:
+              Authorizer: NONE
+    Metadata:
+      SamResourceId: StatsFn
+  RemindersFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: RemindersFn
+      Handler: reminder.handler
+      Policies:
+      - DynamoDBReadPolicy:
+          TableName:
+            Ref: CardsTableName
+      Events:
+        RemindersRoot:
+          Type: HttpApi
+          Properties:
+            Path: /reminders
+            Method: GET
+            ApiId:
+              Ref: Api
+            Auth:
+              Authorizer: CognitoAuth
+        Upcoming:
+          Type: HttpApi
+          Properties:
+            Path: /reminders/upcoming
+            Method: GET
+            ApiId:
+              Ref: Api
+            Auth:
+              Authorizer: CognitoAuth
+    Metadata:
+      SamResourceId: RemindersFn
+  SettingsFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: SettingsFn
+      Handler: settings.handler
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: CardsTableName
+      Events:
+        GetStages:
+          Type: HttpApi
+          Properties:
+            Path: /settings/stages
+            Method: GET
+            ApiId:
+              Ref: Api
+            Auth:
+              Authorizer: CognitoAuth
+        PutStages:
+          Type: HttpApi
+          Properties:
+            Path: /settings/stages
+            Method: PUT
+            ApiId:
+              Ref: Api
+            Auth:
+              Authorizer: CognitoAuth
+    Metadata:
+      SamResourceId: SettingsFn
+  ProfileFn:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ProfileFn
+      Handler: profile.handler
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: ProfilesTableName
+      Events:
+        GetProfile:
+          Type: HttpApi
+          Properties:
+            Path: /profile
+            Method: GET
+            ApiId:
+              Ref: Api
+            Auth:
+              Authorizer: CognitoAuth
+        PutProfile:
+          Type: HttpApi
+          Properties:
+            Path: /profile
+            Method: PUT
+            ApiId:
+              Ref: Api
+            Auth:
+              Authorizer: CognitoAuth
+    Metadata:
+      SamResourceId: ProfileFn
+Outputs:
+  ApiEndpoint:
+    Description: Base URL of the HTTP API
+    Value:
+      Fn::Sub: https://${Api}.execute-api.${AWS::Region}.amazonaws.com
+  CardsTableOut:
+    Description: DynamoDB table name (cards)
+    Value:
+      Ref: CardsTableName
+  ProfilesTableOut:
+    Description: DynamoDB table name (profiles)
+    Value:
+      Ref: ProfilesTableName
