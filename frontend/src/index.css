@@ -1,0 +1,18 @@
+/* src/index.css */
+
+/* Optional font */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+/* Tailwind v4 single import */
+@import "tailwindcss";
+
+/* Base tweaks (optional) */
+:root {
+  --bg: #f8fafc;   /* slate-50 */
+  --fg: #0f172a;   /* slate-900 */
+}
+html {
+  font-family: Inter, system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+}

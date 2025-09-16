@@ -1,0 +1,116 @@
+{
+  "info": {
+    "name": "JobCopilot API",
+    "_postman_id": "c3a3c2f3-0d5c-4416-916c-collection",
+    "description": "Postman collection for JobCopilot backend.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "apiBase", "value": "https://ht1x7aamak.execute-api.ca-central-1.amazonaws.com" },
+    { "key": "id_token", "value": "" },
+    { "key": "dev_user_id", "value": "teg-user" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{apiBase}}/health"
+      }
+    },
+    {
+      "name": "Cards - List",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{id_token}}", "type": "text" },
+          { "key": "x-user-id", "value": "{{dev_user_id}}", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{apiBase}}/cards?limit=25&status=Saved,Applied&q=",
+          "host": ["{{apiBase}}"],
+          "path": ["cards"],
+          "query": [
+            { "key": "limit", "value": "25" },
+            { "key": "status", "value": "Saved,Applied" },
+            { "key": "q", "value": "" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Cards - Create",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{id_token}}", "type": "text" },
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "x-user-id", "value": "{{dev_user_id}}", "type": "text" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Software Engineer\",\n  \"company\": \"Acme\",\n  \"location\": \"Toronto\",\n  \"status\": \"Applied\",\n  \"dueDate\": \"2025-09-05\",\n  \"tags\": [\"backend\"],\n  \"notes\": \"Applied via career page\"\n}"
+        },
+        "url": "{{apiBase}}/cards"
+      }
+    },
+    {
+      "name": "Cards - Update",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{id_token}}", "type": "text" },
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "x-user-id", "value": "{{dev_user_id}}", "type": "text" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"Interview\",\n  \"dueDate\": \"2025-09-10\"\n}"
+        },
+        "url": "{{apiBase}}/cards/:cardId"
+      }
+    },
+    {
+      "name": "Cards - Delete",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{id_token}}", "type": "text" },
+          { "key": "x-user-id", "value": "{{dev_user_id}}", "type": "text" }
+        ],
+        "url": "{{apiBase}}/cards/:cardId"
+      }
+    },
+    {
+      "name": "Stats - Get",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{id_token}}", "type": "text" },
+          { "key": "x-user-id", "value": "{{dev_user_id}}", "type": "text" }
+        ],
+        "url": "{{apiBase}}/stats"
+      }
+    },
+    {
+      "name": "Reminders - Upcoming",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{id_token}}", "type": "text" },
+          { "key": "x-user-id", "value": "{{dev_user_id}}", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{apiBase}}/reminders/upcoming?days=14&status=Applied,Interview",
+          "host": ["{{apiBase}}"],
+          "path": ["reminders", "upcoming"],
+          "query": [
+            { "key": "days", "value": "14" },
+            { "key": "status", "value": "Applied,Interview" }
+          ]
+        }
+      }
+    }
+  ]
+}

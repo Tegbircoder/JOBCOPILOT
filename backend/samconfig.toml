@@ -1,0 +1,22 @@
+version = 0.1
+
+[default]
+[default.deploy.parameters]
+stack_name = "jobcopilot"
+region = "ca-central-1"
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+resolve_s3 = true
+# ---------- DEV ----------
+s3_prefix = "jobcopilot"
+image_repositories = []
+parameter_overrides = "CardsTableName=\"jobcopilot-cards-dev2\" ProfilesTableName=\"jobcopilot-profiles-dev\" UserPoolId=\"ca-central-1_q8nKkdcza\" UserPoolClientId=\"6i2h8eo8spee1c5n81gm2n6rfq\" AllowDevHeader=\"1\""
+
+[prod]
+[prod.deploy.parameters]
+stack_name = "jobcopilot-backend-prod"
+region = "ca-central-1"
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+resolve_s3 = true
+

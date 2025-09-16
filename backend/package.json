@@ -1,0 +1,21 @@
+{
+  "name": "jobcopilot-backend",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "description": "Serverless backend for JobCopilot",
+  "scripts": {
+    "build": "echo Build handled by SAM",
+    "lint": "echo (optional) add eslint later"
+  },
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.879.0",
+    "uuid": "^11.1.0"
+  }
+  
+  
+}
