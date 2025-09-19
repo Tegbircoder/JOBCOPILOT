@@ -5,7 +5,7 @@ import Sidebar from "./Sidebar";
 
 export default function Layout() {
   return (
-    <div className="flex h-screen w-screen overflow-hidden">
+    <div className="flex h-screen w-screen overflow-hidden bg-gradient-to-br from-slate-50 to-indigo-50/30">
       {/* Left sidebar */}
       <Sidebar />
 
